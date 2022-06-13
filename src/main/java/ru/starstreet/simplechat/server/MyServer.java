@@ -17,8 +17,6 @@ public class MyServer {
     private TextArea chatArea;
     @FXML
     private TextField textField;
-    @FXML
-    private Button sendButton;
 
     private List<ClientHandler> clients;
     private final int PORT = 8189;
@@ -78,5 +76,12 @@ public class MyServer {
 
     public void sendMsg(ActionEvent actionEvent) {
         broadcastMsg(textField.getText());
+    }
+
+    public synchronized void close() {
+        for (ClientHandler handler : clients) {
+            handler.closeConnection();
+        }
+
     }
 }

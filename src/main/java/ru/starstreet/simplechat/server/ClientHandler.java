@@ -46,8 +46,10 @@ public class ClientHandler {
                 return;
             if (str.startsWith("/w")) {
                 String[] parts = str.split("\\s");
-                if (myServer.isNickBusy(parts[1]))
-                    myServer.sendPrivateMsg(parts[1], parts[2]);
+                if (myServer.isNickBusy(parts[1])) {
+                    int commandAndNameLength = parts[0].length() + parts[1].length() + 2;
+                    myServer.sendPrivateMsg(parts[1], str.substring(commandAndNameLength));
+                }
             } else
                 myServer.broadcastMsg(name + ": " + str);
         }

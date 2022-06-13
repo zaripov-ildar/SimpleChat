@@ -15,7 +15,7 @@
     <TextArea fx:id="chatArea" prefHeight="350" editable="false"/>
     <HBox>
         <TextField fx:id="textField"/>
-        <Button fx:id="sendButton" text="send" onAction="#sendMsg"/>
+        <Button text="send" onAction="#sendMsg"/>
     </HBox>
 
 </VBox>
