@@ -60,7 +60,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>ru.starstreet.simplechat.ClientApplication</mainClass>
+                            <mainClass>ru.starstreet.simplechat.client.ChatClientApp</mainClass>
                         </configuration>
                     </execution>
                 </executions>

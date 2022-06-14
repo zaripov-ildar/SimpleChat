@@ -1,7 +1,8 @@
 package ru.starstreet.simplechat.server;
 
-public interface AuthService {
+import java.io.Closeable;
+
+public interface AuthService extends Closeable {
     void start();
     String getNickByLoginPass(String login, String pass);
-    void stop();
 }

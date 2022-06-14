@@ -1,28 +1,41 @@
 package ru.starstreet.simplechat.server;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BaseAuthService implements AuthService {
-    private class Entry {
+    private static class UserData {
         private String login;
         private String pass;
         private String nick;
 
-        private Entry(String login, String pass, String nick) {
+        private UserData(String login, String pass, String nick) {
             this.login = login;
             this.pass = pass;
             this.nick = nick;
         }
+
+        public String getLogin() {
+            return login;
+        }
+
+        public String getPass() {
+            return pass;
+        }
+
+        public String getNick() {
+            return nick;
+        }
     }
-    private List<Entry> entries;
+    private final List<UserData> entries;
 
     public BaseAuthService() {
         entries = new ArrayList<>();
-        entries.add(new Entry("login1", "pass1", "nick1"));
-        entries.add(new Entry("login2", "pass2", "nick2"));
-        entries.add(new Entry("login3", "pass3", "nick3"));
+        entries.add(new UserData("login1", "pass1", "nick1"));
+        entries.add(new UserData("login2", "pass2", "nick2"));
+        entries.add(new UserData("login3", "pass3", "nick3"));
     }
 
     @Override
@@ -32,14 +45,16 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public String getNickByLoginPass(String login, String pass) {
-        for (Entry entry: entries){
-            if(entry.login.equals(login) && entry.pass.equals(pass)) return entry.nick;
+        for (UserData userData : entries){
+            if(userData.login.equals(login) && userData.pass.equals(pass)) {
+                return userData.nick;
+            }
         }
         return null;
     }
 
     @Override
-    public void stop() {
+    public void close() throws IOException {
         System.out.println("Сервис аутентификации остановлен");
     }
 }
