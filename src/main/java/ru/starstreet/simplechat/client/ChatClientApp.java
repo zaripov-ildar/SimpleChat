@@ -11,6 +11,7 @@ public class ChatClientApp extends Application {
     public static void main(String[] args) {
         launch();
     }
+
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(ChatClientApp.class.getResource("client-View.fxml"));

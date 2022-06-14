@@ -16,19 +16,8 @@ public class BaseAuthService implements AuthService {
             this.pass = pass;
             this.nick = nick;
         }
-
-        public String getLogin() {
-            return login;
-        }
-
-        public String getPass() {
-            return pass;
-        }
-
-        public String getNick() {
-            return nick;
-        }
     }
+
     private final List<UserData> entries;
 
     public BaseAuthService() {
@@ -45,8 +34,8 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public String getNickByLoginPass(String login, String pass) {
-        for (UserData userData : entries){
-            if(userData.login.equals(login) && userData.pass.equals(pass)) {
+        for (UserData userData : entries) {
+            if (userData.login.equals(login) && userData.pass.equals(pass)) {
                 return userData.nick;
             }
         }

@@ -34,16 +34,15 @@ public class ChatClient {
     }
 
     private void waitAuth() throws IOException {
-        while (true){
+        while (true) {
             final String msg = in.readUTF();
-            if (msg.startsWith("/authok")){
+            if (msg.startsWith("/authok")) {
                 String[] split = msg.split("\\s+");
                 String nick = split[1];
                 controller.setAuth(true);
                 controller.addMessage("Успешная авторизация под ником " + nick);
                 break;
-            }
-            else if (msg.startsWith("/alert")){
+            } else if (msg.startsWith("/alert")) {
                 controller.addMessage(msg);
             }
         }
