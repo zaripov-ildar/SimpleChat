@@ -1,9 +1,13 @@
 package ru.starstreet.simplechat.server;
 
+import ru.starstreet.simplechat.Command;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+
+import static ru.starstreet.simplechat.Command.*;
 
 public class ClientHandler {
     private final ChatServer chatServer;
@@ -11,6 +15,7 @@ public class ClientHandler {
     private final DataInputStream in;
     private final DataOutputStream out;
     private String nick;
+    private boolean clientClosed;
 
     public String getNick() {
         return nick;
@@ -26,7 +31,9 @@ public class ClientHandler {
             new Thread(() -> {
                 try {
                     authenticate();
-                    readMessages();
+                    if (!clientClosed) {
+                        readMessages();
+                    }
                 } finally {
                     closeConnection();
                 }
@@ -40,17 +47,18 @@ public class ClientHandler {
         try {
             while (true) {
                 String str = in.readUTF();
-                System.out.println("от " + nick + ": " + str);
-                if (str.equals("/end"))
+                Command command = getCommand(str);
+                if (command == END) {
                     break;
-                if (str.startsWith("/w")) {
-                    String[] parts = str.split("\\s");
-                    if (chatServer.isNickBusy(parts[1])) {
-                        int commandAndNameLength = parts[0].length() + parts[1].length() + 2;
-                        chatServer.sendPrivateMsg(parts[1], "private msg from " + nick + ": " + str.substring(commandAndNameLength));
-                    }
-                } else
-                    chatServer.broadcastMsg(nick + ": " + str);
+                }
+                if (command == PRIVATE_MESSAGE) {
+                    String[] params = command.parse(str);
+                    String nickTo = params[0];
+                    String message = params[1];
+                    chatServer.sendPrivateMsg(this, nickTo, message);
+                    continue;
+                }
+                chatServer.broadcastMsg(MESSAGE, nick + ": " + command.parse(str)[0]);
             }
         } catch (IOException e) {
             throw new RuntimeException("Ошибка при чтении сообщений от клиента");
@@ -61,31 +69,42 @@ public class ClientHandler {
         try {
             while (true) {
                 String str = in.readUTF();
-                if (str.startsWith("/auth")) {
-                    String[] parts = str.split("\\s+");
-                    if (parts.length != 3) continue;
-                    String nick = chatServer.getAuthService().getNickByLoginPass(parts[1], parts[2]);
+                Command command = getCommand(str);
+                if (command == AUTH) {
+                    String[] params = command.parse(str);
+                    String login = params[0];
+                    String pass = params[1];
+                    String nick = chatServer.getAuthService().getNickByLoginPass(login, pass);
                     if (nick != null) {
                         if (chatServer.isNickBusy(nick)) {
-                            sendMsg("Учётная запись уже используется");
+                            sendMsg(ERROR, "Учётная запись уже используется");
                             continue;
                         }
-                        sendMsg("/authok " + nick);
+                        sendMsg(AUTH_OK, nick);
                         this.nick = nick;
-                        chatServer.broadcastMsg("Пользователь " + this.nick + " зашёл в чат");
+                        chatServer.broadcastMsg(MESSAGE, "Пользователь " + this.nick + " зашёл в чат");
                         chatServer.subscribe(this);
                         break;
                     } else {
-                        sendMsg("/alert Неверные логин/пароль");
+                        sendMsg(ERROR, "Неверные логин/пароль");
                     }
                 }
+                if (command == END) {
+                    clientClosed = true;
+                    break;
+                }
+
             }
         } catch (IOException e) {
             throw new RuntimeException("Ошибка на этапе аутентификации");
         }
     }
 
-    public void sendMsg(String s) {
+    public void sendMsg(Command command, String... params) {
+        sendMsg(command.collectMessages(params));
+    }
+
+    private void sendMsg(String s) {
         try {
             out.writeUTF(s);
         } catch (IOException e) {
@@ -94,10 +113,11 @@ public class ClientHandler {
     }
 
     public void closeConnection() {
-        sendMsg("/end");
-        chatServer.unsubscribe(this);
-        chatServer.broadcastMsg(nick + " вышел из чата");
-        System.out.println((nick + " вышел из чата"));
+        sendMsg(END);
+        if (socket != null && socket.isConnected()) {
+            chatServer.unsubscribe(this);
+            chatServer.broadcastMsg(MESSAGE, nick + " вышел из чата");
+        }
         if (in != null) {
             try {
                 in.close();

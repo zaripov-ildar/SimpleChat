@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ListView?>
 <VBox spacing="10" xmlns:fx="http://javafx.com/fxml" fx:controller="ru.starstreet.simplechat.client.ChatController">
     <padding>
         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
@@ -17,13 +18,19 @@
     <HBox spacing="10" fx:id="authBox">
         <TextField fx:id="loginField" promptText="login"/>
         <PasswordField fx:id="passField" promptText="password"/>
-        <Button text="Sign in" onAction="#signInBtnClick"/>
+        <Button text="Sign in" onAction="#signInBtnClick" defaultButton="true"/>
     </HBox>
-    <VBox fx:id="messageBox" visible="false" spacing="10" VBox.vgrow="ALWAYS">
-        <TextArea fx:id="messageArea" editable="false" VBox.vgrow="ALWAYS"/>
-        <HBox spacing="10">
-            <TextField fx:id="messageField" HBox.hgrow="ALWAYS"/>
-            <Button text="Send" onAction="#clickSendButton" defaultButton="true"/>
-        </HBox>
-    </VBox>
+    <HBox fx:id="messageBox" visible="false" spacing="10" VBox.vgrow="ALWAYS">
+        <VBox>
+            <TextArea fx:id="messageArea" editable="false" VBox.vgrow="ALWAYS"/>
+            <HBox spacing="10">
+                <TextField fx:id="messageField" HBox.hgrow="ALWAYS"/>
+                <Button text="Send" onAction="#clickSendButton" defaultButton="true"/>
+            </HBox>
+        </VBox>
+        <VBox>
+            <Button text="Logout" onMouseClicked="#logout"/>
+            <ListView fx:id="clientList" minWidth="200" maxWidth="200" onMouseClicked="#selectClient"/>
+        </VBox>
+    </HBox>
 </VBox>

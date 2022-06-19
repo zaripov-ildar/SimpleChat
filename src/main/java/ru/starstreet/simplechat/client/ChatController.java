@@ -2,13 +2,19 @@ package ru.starstreet.simplechat.client;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
+import static ru.starstreet.simplechat.Command.*;
+
 public class ChatController {
+    @FXML
+    private ListView<String> clientList;
     @FXML
     private TextField loginField;
     @FXML
@@ -16,15 +22,35 @@ public class ChatController {
     @FXML
     private HBox authBox;
     @FXML
-    private VBox messageBox;
+    private HBox messageBox;
     @FXML
     private TextArea messageArea;
     @FXML
     private TextField messageField;
     private final ChatClient client;
 
+    private String selectedNick;
+
     public ChatController() {
         this.client = new ChatClient(this);
+        new Thread(() -> {
+            while (!client.isClosed()) {
+                if (!client.isConnected()) {
+                    connect();
+                }
+
+//без этой странной части цикл крутится вечно, возможно этот цикл слишком часто обращается переменной closed
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+    }
+
+    public void connect() {
         while (true) {
             try {
                 client.openConnection();
@@ -51,12 +77,18 @@ public class ChatController {
         }
     }
 
-    public void clickSendButton() {
+    @FXML
+    private void clickSendButton() {
         final String message = messageField.getText();
         if (message.isBlank()) {
             return;
         }
-        client.sendMessage(message);
+        if (selectedNick != null) {
+            client.sendMessage(PRIVATE_MESSAGE, selectedNick, message);
+            selectedNick = null;
+        } else {
+            client.sendMessage(MESSAGE, message);
+        }
         messageField.clear();
         messageField.requestFocus();
     }
@@ -66,12 +98,39 @@ public class ChatController {
     }
 
     public void signInBtnClick() {
-        client.sendMessage("/auth " + loginField.getText() + " " + passField.getText());
+        client.sendMessage(AUTH, loginField.getText(), passField.getText());
     }
 
     public void setAuth(boolean success) {
         authBox.setVisible(!success);
         messageBox.setVisible(success);
 
+    }
+
+    public void showError(String errorMessage) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, errorMessage, new ButtonType("Ok"));
+        alert.setTitle("Error!");
+        alert.showAndWait();
+    }
+
+    public void selectClient(MouseEvent mouseEvent) {
+        if (mouseEvent.getClickCount() == 2) {
+            String selectedNick = clientList.getSelectionModel().getSelectedItem();
+            if (selectedNick != null && !selectedNick.isEmpty())
+                this.selectedNick = selectedNick;
+        }
+    }
+
+    public void updateClientList(String[] clients) {
+        clientList.getItems().clear();
+        clientList.getItems().addAll(clients);
+    }
+
+    public void logout(MouseEvent mouseEvent) {
+        client.sendMessage(END);
+    }
+
+    public ChatClient getClient() {
+        return client;
     }
 }
