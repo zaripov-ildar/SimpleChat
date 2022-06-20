@@ -18,7 +18,7 @@
     <HBox spacing="10" fx:id="authBox">
         <TextField fx:id="loginField" promptText="login"/>
         <PasswordField fx:id="passField" promptText="password"/>
-        <Button text="Sign in" onAction="#signInBtnClick" defaultButton="true"/>
+        <Button text="Sign in" onAction="#signInBtnClick"/>
     </HBox>
     <HBox fx:id="messageBox" visible="false" spacing="10" VBox.vgrow="ALWAYS">
         <VBox>

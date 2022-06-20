@@ -18,7 +18,7 @@ public class ClientHandler {
     private boolean clientClosed;
     private boolean authenticated;
 
-    private final int WAITING_TIME_LIMIT = 20_000;
+    private final int WAITING_TIME_LIMIT = 120_000;
 
     public String getNick() {
         return nick;
