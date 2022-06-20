@@ -1,5 +1,11 @@
 package ru.starstreet.simplechat.client;
 
+
+import javafx.application.Platform;
+import ru.starstreet.simplechat.Command;
+
+import static ru.starstreet.simplechat.Command.*;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -12,9 +18,27 @@ public class ChatClient {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    private boolean closed;
+    private boolean disconnectedByServer;
 
     public ChatClient(ChatController controller) {
         this.controller = controller;
+    }
+
+    public synchronized boolean isClosed() {
+        return closed;
+    }
+
+    public synchronized void setClosed(boolean closed) {
+        this.closed = closed;
+    }
+
+    public boolean isDisconnectedByServer() {
+        return disconnectedByServer;
+    }
+
+    public void setDisconnectedByServer(boolean disconnectedByServer) {
+        this.disconnectedByServer = disconnectedByServer;
     }
 
     public void openConnection() throws IOException {
@@ -24,26 +48,43 @@ public class ChatClient {
         new Thread(() -> {
             try {
                 waitAuth();
-                readMessages();
+                if (!(isClosed() || isDisconnectedByServer())) {
+                    readMessages();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 closeConnection();
             }
         }).start();
+
     }
 
     private void waitAuth() throws IOException {
         while (true) {
             final String msg = in.readUTF();
-            if (msg.startsWith("/authok")) {
-                String[] split = msg.split("\\s+");
-                String nick = split[1];
+            Command command = getCommand(msg);
+            String[] params = command.parse(msg);
+            if (command == AUTH_OK) {
+                String nick = params[0];
                 controller.setAuth(true);
                 controller.addMessage("Успешная авторизация под ником " + nick);
                 break;
-            } else if (msg.startsWith("/alert")) {
-                controller.addMessage(msg);
+            }
+            if (command == ERROR) {
+                Platform.runLater(() -> controller.showError(command.collectMessages(params)));
+                continue;
+            }
+            if (command == END) {
+                break;
+            }
+            if (command == DISCONNECT) {
+                sendMessage(END);
+                Platform.runLater(() -> {
+                    controller.showError("Превышено время ожидания");
+                    System.exit(0);
+                });
+                setDisconnectedByServer(true);
             }
         }
 
@@ -76,19 +117,41 @@ public class ChatClient {
     private void readMessages() throws IOException {
         while (true) {
             String message = in.readUTF();
-            if ("/end".equals(message)) {
+            Command command = getCommand(message);
+            if (command == END) {
                 controller.setAuth(false);
                 break;
             }
-            controller.addMessage(message);
+            String[] params = command.parse(message);
+            if (command == ERROR) {
+                String msgError = params[0];
+                Platform.runLater(() -> controller.showError(msgError));
+                continue;
+            }
+            if (MESSAGE == command) {
+                Platform.runLater(() -> controller.addMessage(params[0]));
+            }
+
+            if (CLIENTS == command) {
+                Platform.runLater(() -> controller.updateClientList(params));
+            }
         }
     }
 
-    public void sendMessage(String message) {
+    private void sendMessage(String message) {
         try {
             out.writeUTF(message);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void sendMessage(Command command, String... params) {
+        sendMessage(command.collectMessages(params));
+    }
+
+    public void closeApp() {
+        setClosed(true);
+        sendMessage(END);
     }
 }

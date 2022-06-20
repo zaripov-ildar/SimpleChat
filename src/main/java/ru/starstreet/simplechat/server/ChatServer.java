@@ -1,15 +1,18 @@
 package ru.starstreet.simplechat.server;
 
 
+import ru.starstreet.simplechat.Command;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ChatServer {
 
-    private final List<ClientHandler> clients;
+    private final Map<String, ClientHandler> clients;
     private final int PORT = 8189;
     private AuthService authService;
 
@@ -18,7 +21,7 @@ public class ChatServer {
     }
 
     public ChatServer() {
-        this.clients = new ArrayList<>();
+        this.clients = new HashMap<>();
     }
 
     public void run() {
@@ -37,38 +40,40 @@ public class ChatServer {
     }
 
     public synchronized boolean isNickBusy(String nick) {
-        for (ClientHandler handler : clients) {
-            if (handler.getNick().equals(nick))
-                return true;
-        }
-        return false;
+        broadcastClientsList();
+        return clients.get(nick) != null;
     }
 
-    public synchronized void broadcastMsg(String s) {
-        for (ClientHandler handler : clients) {
-            handler.sendMsg(s);
+    public synchronized void broadcastMsg(Command command, String message) {
+        for (ClientHandler handler : clients.values()) {
+            handler.sendMsg(command, message);
         }
     }
 
-    public synchronized void sendPrivateMsg(String receiverName, String msg) {
-        for (ClientHandler handler : clients) {
-            if (handler.getNick().equals(receiverName))
-                handler.sendMsg(msg);
-        }
-    }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
-        clients.add(clientHandler);
+        clients.put(clientHandler.getNick(), clientHandler);
+        broadcastClientsList();
         System.out.println(clientHandler.getNick() + " вошёл в чат");
     }
 
     public synchronized void unsubscribe(ClientHandler clientHandler) {
         System.out.println(clientHandler.getNick() + " покинул чат");
-        clients.remove(clientHandler);
+        clients.remove(clientHandler.getNick());
+        broadcastClientsList();
     }
 
+    private void broadcastClientsList() {
+        String nicks = clients.values().stream()
+                .map(ClientHandler::getNick)
+                .collect(Collectors.joining(" "));
+        System.out.println(nicks);
+        broadcastMsg(Command.CLIENTS, nicks);
+    }
+
+
     public synchronized void close() {
-        for (ClientHandler handler : clients) {
+        for (ClientHandler handler : clients.values()) {
             handler.closeConnection();
         }
         System.out.println("Сервер успешно прекратил работу");
@@ -76,4 +81,13 @@ public class ChatServer {
     }
 
 
+    public void sendPrivateMsg(ClientHandler from, String nickTo, String message) {
+        ClientHandler clientTo = clients.get(nickTo);
+        if (clientTo == null) {
+            from.sendMsg(Command.ERROR, "Пользователь не авторизован");
+            return;
+        }
+        clientTo.sendMsg(Command.MESSAGE, "От " + from.getNick() + ":" + message);
+        from.sendMsg(Command.MESSAGE, "Участнику " + nickTo + ":" + message);
+    }
 }
