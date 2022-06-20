@@ -19,6 +19,7 @@ public class ChatClient {
     private DataInputStream in;
     private DataOutputStream out;
     private boolean closed;
+    private boolean disconnectedByServer;
 
     public ChatClient(ChatController controller) {
         this.controller = controller;
@@ -32,6 +33,14 @@ public class ChatClient {
         this.closed = closed;
     }
 
+    public boolean isDisconnectedByServer() {
+        return disconnectedByServer;
+    }
+
+    public void setDisconnectedByServer(boolean disconnectedByServer) {
+        this.disconnectedByServer = disconnectedByServer;
+    }
+
     public boolean isConnected() {
         return socket != null && socket.isConnected();
     }
@@ -43,7 +52,7 @@ public class ChatClient {
         new Thread(() -> {
             try {
                 waitAuth();
-                if (!isClosed()) {
+                if (!(isClosed() || isDisconnectedByServer())) {
                     readMessages();
                 }
 
@@ -72,7 +81,12 @@ public class ChatClient {
                 continue;
             }
             if (command == END) {
+                System.out.println("i got END");
                 break;
+            }
+            if (command == DISCONNECT){
+                sendMessage(END);
+                setDisconnectedByServer(true);
             }
         }
 
@@ -135,11 +149,7 @@ public class ChatClient {
     }
 
     public void sendMessage(Command command, String... params) {
-        if (command == PRIVATE_MESSAGE)
-            System.out.println("я понял что это приват");
         sendMessage(command.collectMessages(params));
-        if (command == PRIVATE_MESSAGE)
-            System.out.println("я отослал приват" + command.collectMessages(params));
     }
 
     public void closeApp() {

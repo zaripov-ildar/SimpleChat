@@ -17,6 +17,8 @@ public class ClientHandler {
     private String nick;
     private boolean clientClosed;
 
+    private final int WAITING_TIME_LIMIT = 10_000;
+
     public String getNick() {
         return nick;
     }
@@ -30,6 +32,7 @@ public class ClientHandler {
             nick = "";
             new Thread(() -> {
                 try {
+                    waitConnection();
                     authenticate();
                     if (!clientClosed) {
                         readMessages();
@@ -41,6 +44,17 @@ public class ClientHandler {
         } catch (IOException e) {
             throw new RuntimeException("Проблемы при создании обработчика клиента");
         }
+    }
+
+    private void waitConnection() {
+        new Thread(()->{
+            try {
+                Thread.sleep(WAITING_TIME_LIMIT);
+                sendMsg(DISCONNECT);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Ошибка во время ожидания аутентификации");
+            }
+        }).start();
     }
 
     private void readMessages() {

@@ -58,6 +58,12 @@ public enum Command {
             String[] split = commandMessage.split(TOKEN_DELIMITER, 2);
             return new String[]{split[1]};
         }
+    },
+    DISCONNECT("/disconnect"){
+        @Override
+        public String[] parse(String commandMessage) {
+            return new String[0];
+        }
     };
 
     private final String command;
