@@ -27,30 +27,26 @@ public class ChatController {
     private TextArea messageArea;
     @FXML
     private TextField messageField;
-    private final ChatClient client;
+    private ChatClient client;
 
     private String selectedNick;
 
     public ChatController() {
+        initiate();
+    }
+
+    private void initiate(){
         this.client = new ChatClient(this);
         new Thread(() -> {
             while (!client.isClosed()) {
                 if (!client.isConnected()) {
                     connect();
                 }
-
-//без этой странной части цикл крутится вечно, возможно этот цикл слишком часто обращается переменной closed
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }).start();
-
     }
 
-    public void connect() {
+    private void connect() {
         while (true) {
             try {
                 client.openConnection();
@@ -128,6 +124,8 @@ public class ChatController {
 
     public void logout(MouseEvent mouseEvent) {
         client.sendMessage(END);
+        messageArea.clear();
+        initiate();
     }
 
     public ChatClient getClient() {

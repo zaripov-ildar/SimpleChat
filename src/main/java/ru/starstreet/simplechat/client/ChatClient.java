@@ -24,8 +24,12 @@ public class ChatClient {
         this.controller = controller;
     }
 
-    public boolean isClosed() {
+    public synchronized boolean isClosed() {
         return closed;
+    }
+
+    public synchronized void setClosed(boolean closed) {
+        this.closed = closed;
     }
 
     public boolean isConnected() {
@@ -139,7 +143,7 @@ public class ChatClient {
     }
 
     public void closeApp() {
-        this.closed = true;
+        setClosed(true);
         sendMessage(END);
     }
 }
