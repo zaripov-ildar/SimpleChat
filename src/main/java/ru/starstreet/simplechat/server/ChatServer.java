@@ -67,6 +67,7 @@ public class ChatServer {
         String nicks = clients.values().stream()
                 .map(ClientHandler::getNick)
                 .collect(Collectors.joining(" "));
+        System.out.println(nicks);
         broadcastMsg(Command.CLIENTS, nicks);
     }
 

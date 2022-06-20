@@ -11,6 +11,9 @@ public enum Command {
         @Override
         public String[] parse(String commandMessage) {
             String[] split = commandMessage.split(TOKEN_DELIMITER);
+            if (split.length !=3) {
+                return new String[]{"",""};
+            }
             return new String[]{split[1], split[2]};
         }
     },

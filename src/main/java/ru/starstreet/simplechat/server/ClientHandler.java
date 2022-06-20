@@ -16,8 +16,9 @@ public class ClientHandler {
     private final DataOutputStream out;
     private String nick;
     private boolean clientClosed;
+    private boolean authenticated;
 
-    private final int WAITING_TIME_LIMIT = 10_000;
+    private final int WAITING_TIME_LIMIT = 20_000;
 
     public String getNick() {
         return nick;
@@ -47,10 +48,12 @@ public class ClientHandler {
     }
 
     private void waitConnection() {
-        new Thread(()->{
+        new Thread(() -> {
             try {
                 Thread.sleep(WAITING_TIME_LIMIT);
-                sendMsg(DISCONNECT);
+                if (socket.isConnected() && !authenticated) {
+                    sendMsg(DISCONNECT);
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException("Ошибка во время ожидания аутентификации");
             }
@@ -96,6 +99,7 @@ public class ClientHandler {
                         }
                         sendMsg(AUTH_OK, nick);
                         this.nick = nick;
+                        authenticated = true;
                         chatServer.broadcastMsg(MESSAGE, "Пользователь " + this.nick + " зашёл в чат");
                         chatServer.subscribe(this);
                         break;

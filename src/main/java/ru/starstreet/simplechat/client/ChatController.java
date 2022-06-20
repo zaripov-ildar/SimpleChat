@@ -1,14 +1,11 @@
 package ru.starstreet.simplechat.client;
 
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
 import static ru.starstreet.simplechat.Command.*;
@@ -36,26 +33,8 @@ public class ChatController {
         initiate();
     }
 
-    private void initiate(){
+    private void initiate() {
         this.client = new ChatClient(this);
-        Thread t = new Thread(() -> {
-            while (!(client.isClosed()|| client.isDisconnectedByServer())) {
-                if (!client.isConnected()) {
-                    connect();
-                }
-            }
-            if (client.isDisconnectedByServer()){
-                Platform.runLater(()->{
-                    showError("Превышенно время ожидания");
-                    System.exit(0);
-                });
-
-            }
-        });
-        t.start();
-    }
-
-    private void connect() {
         while (true) {
             try {
                 client.openConnection();
@@ -131,7 +110,7 @@ public class ChatController {
         clientList.getItems().addAll(clients);
     }
 
-    public void logout(MouseEvent mouseEvent) {
+    public void logout() {
         client.sendMessage(END);
         messageArea.clear();
         initiate();

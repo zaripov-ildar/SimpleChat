@@ -41,10 +41,6 @@ public class ChatClient {
         this.disconnectedByServer = disconnectedByServer;
     }
 
-    public boolean isConnected() {
-        return socket != null && socket.isConnected();
-    }
-
     public void openConnection() throws IOException {
         this.socket = new Socket("localhost", 8189);
         this.in = new DataInputStream(socket.getInputStream());
@@ -55,7 +51,6 @@ public class ChatClient {
                 if (!(isClosed() || isDisconnectedByServer())) {
                     readMessages();
                 }
-
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -81,11 +76,14 @@ public class ChatClient {
                 continue;
             }
             if (command == END) {
-                System.out.println("i got END");
                 break;
             }
-            if (command == DISCONNECT){
+            if (command == DISCONNECT) {
                 sendMessage(END);
+                Platform.runLater(() -> {
+                    controller.showError("Превышено время ожидания");
+                    System.exit(0);
+                });
                 setDisconnectedByServer(true);
             }
         }
