@@ -68,6 +68,11 @@ public class ClientHandler {
                 if (command == END) {
                     break;
                 }
+                if (command == CHANGE_NICK){
+                    String newNick = command.parse(str)[0];
+                    chatServer.setNick(this, newNick);
+                    continue;
+                }
                 if (command == PRIVATE_MESSAGE) {
                     String[] params = command.parse(str);
                     String nickTo = params[0];
@@ -157,5 +162,9 @@ public class ClientHandler {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void setNick(String newNick) {
+        this.nick = newNick;
     }
 }

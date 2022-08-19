@@ -29,7 +29,11 @@
             </HBox>
         </VBox>
         <VBox>
-            <Button text="Logout" onMouseClicked="#logout"/>
+            <HBox>
+                <Button text="Logout" onMouseClicked="#logout"/>
+                <Button text="Set new nickname" onMouseClicked="#setNickName"/>
+
+            </HBox>
             <ListView fx:id="clientList" minWidth="200" maxWidth="200" onMouseClicked="#selectClient"/>
         </VBox>
     </HBox>

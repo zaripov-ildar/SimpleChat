@@ -90,4 +90,15 @@ public class ChatServer {
         clientTo.sendMsg(Command.MESSAGE, "От " + from.getNick() + ":" + message);
         from.sendMsg(Command.MESSAGE, "Участнику " + nickTo + ":" + message);
     }
+
+    public void setNick(ClientHandler clientHandler, String newNick) {
+        if (!isNickBusy(newNick)){
+            authService.setNick(clientHandler.getNick(), newNick);
+            broadcastMsg(Command.MESSAGE,clientHandler.getNick() + " сменил ник на " + newNick);
+            clients.remove(clientHandler.getNick());
+            clientHandler.setNick(newNick);
+            clients.put(newNick,clientHandler);
+            broadcastClientsList();
+        }
+    }
 }
