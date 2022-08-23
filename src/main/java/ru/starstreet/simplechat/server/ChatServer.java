@@ -80,7 +80,6 @@ public class ChatServer {
 
     }
 
-
     public void sendPrivateMsg(ClientHandler from, String nickTo, String message) {
         ClientHandler clientTo = clients.get(nickTo);
         if (clientTo == null) {

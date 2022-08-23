@@ -74,6 +74,13 @@ public enum Command {
             String[] split = commandMessage.split(TOKEN_DELIMITER, 2);
             return new String[]{split[1]};
         }
+    },
+    HISTORY("/|history"){
+        @Override
+        public String[] parse(String commandMessage) {
+            String[] split = commandMessage.split(TOKEN_DELIMITER, 2);
+            return new String[]{split[1]};
+        }
     };
 
     private final String command;

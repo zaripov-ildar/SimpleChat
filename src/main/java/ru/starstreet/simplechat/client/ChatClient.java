@@ -135,6 +135,9 @@ public class ChatClient {
             if (CLIENTS == command) {
                 Platform.runLater(() -> controller.updateClientList(params));
             }
+            if (HISTORY == command){
+                Platform.runLater(() -> controller.addMessage(params[0]));
+            }
         }
     }
 

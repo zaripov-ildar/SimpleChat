@@ -3,8 +3,6 @@ package ru.starstreet.simplechat.server;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BaseAuthService implements AuthService {
     private Connection connection;
