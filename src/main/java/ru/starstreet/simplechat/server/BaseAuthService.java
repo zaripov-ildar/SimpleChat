@@ -1,11 +1,15 @@
 package ru.starstreet.simplechat.server;
 
 
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.sql.*;
 
 public class BaseAuthService implements AuthService {
     private Connection connection;
+    private final Logger log;
+
     private static class UserData {
         private String login;
         private String pass;
@@ -18,12 +22,12 @@ public class BaseAuthService implements AuthService {
         }
     }
 
-    public BaseAuthService() {
+    public BaseAuthService(Logger log) {
+        this.log = log;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:src/main/resources/ChatClients.db");
         } catch (SQLException e) {
-            System.out.println("something wrong with connection");
-            e.printStackTrace();
+            log.error("Ошибка соединения с БД", e);
         }
     }
 
@@ -41,7 +45,8 @@ public class BaseAuthService implements AuthService {
             ResultSet resultSet = statement.executeQuery(format);
             return resultSet.getString(1);
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.warn("Ошибка аутентификации: " + e.getMessage() +
+                    "\n\tНеверная пара login\\password: " + login + "\\*****",e);
         }
         return null;
     }
@@ -59,7 +64,7 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public void close() throws IOException {
-        if (connection!=null){
+        if (connection != null) {
             try {
                 connection.close();
             } catch (SQLException e) {

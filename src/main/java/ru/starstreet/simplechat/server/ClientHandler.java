@@ -76,6 +76,7 @@ public class ClientHandler {
             String message;
             while (true) {
                 String str = in.readUTF();
+                chatServer.log(this, str);
                 Command command = getCommand(str);
                 if (command == END) {
                     break;
