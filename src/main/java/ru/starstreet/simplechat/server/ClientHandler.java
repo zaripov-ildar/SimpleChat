@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Path;
 
 import static ru.starstreet.simplechat.Command.*;
 
@@ -17,14 +18,17 @@ public class ClientHandler {
     private String nick;
     private boolean clientClosed;
     private boolean authenticated;
+    private String login;
+    private ChatStore chatStore;
 
-    private final int WAITING_TIME_LIMIT = 20_000;
+    private final int WAITING_TIME_LIMIT = 120_000;
 
     public String getNick() {
         return nick;
     }
 
     public ClientHandler(ChatServer chatServer, Socket socket) {
+
         try {
             this.socket = socket;
             this.chatServer = chatServer;
@@ -35,7 +39,9 @@ public class ClientHandler {
                 try {
                     waitConnection();
                     authenticate();
+                    initiateChatStore();
                     if (!clientClosed) {
+                        sendMsg(HISTORY, chatStore.getHistoryString(100));
                         readMessages();
                     }
                 } finally {
@@ -45,6 +51,11 @@ public class ClientHandler {
         } catch (IOException e) {
             throw new RuntimeException("Проблемы при создании обработчика клиента");
         }
+    }
+
+    private void initiateChatStore() {
+        chatStore = new ChatStore(Path.of("src", "main", "resources", "history_" + this.login + ".txt"));
+
     }
 
     private void waitConnection() {
@@ -62,20 +73,32 @@ public class ClientHandler {
 
     private void readMessages() {
         try {
+            String message;
             while (true) {
                 String str = in.readUTF();
+                chatServer.log(this, str);
                 Command command = getCommand(str);
                 if (command == END) {
                     break;
                 }
+                if (command == CHANGE_NICK) {
+                    String newNick = command.parse(str)[0];
+                    chatServer.setNick(this, newNick);
+                    continue;
+                }
                 if (command == PRIVATE_MESSAGE) {
                     String[] params = command.parse(str);
                     String nickTo = params[0];
-                    String message = params[1];
+                    message = params[1];
                     chatServer.sendPrivateMsg(this, nickTo, message);
+                    chatStore.addNewMessage(message);
                     continue;
                 }
-                chatServer.broadcastMsg(MESSAGE, nick + ": " + command.parse(str)[0]);
+                if (command == MESSAGE) {
+                    message = nick + ": " + command.parse(str)[0];
+                    chatServer.broadcastMsg(MESSAGE, message);
+                    chatStore.addNewMessage(message);
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Ошибка при чтении сообщений от клиента");
@@ -99,6 +122,7 @@ public class ClientHandler {
                         }
                         sendMsg(AUTH_OK, nick);
                         this.nick = nick;
+                        this.login = login;
                         authenticated = true;
                         chatServer.broadcastMsg(MESSAGE, "Пользователь " + this.nick + " зашёл в чат");
                         chatServer.subscribe(this);
@@ -119,6 +143,9 @@ public class ClientHandler {
     }
 
     public void sendMsg(Command command, String... params) {
+        if (command == MESSAGE || command == PRIVATE_MESSAGE) {
+            chatStore.addNewMessage(params[0]);
+        }
         sendMsg(command.collectMessages(params));
     }
 
@@ -157,5 +184,9 @@ public class ClientHandler {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void setNick(String newNick) {
+        this.nick = newNick;
     }
 }

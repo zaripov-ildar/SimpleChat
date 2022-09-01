@@ -1,6 +1,8 @@
 package ru.starstreet.simplechat.client;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
@@ -11,6 +13,8 @@ import java.util.Optional;
 import static ru.starstreet.simplechat.Command.*;
 
 public class ChatController {
+    @FXML
+    private TextField newNickField;
     @FXML
     private ListView<String> clientList;
     @FXML
@@ -118,5 +122,13 @@ public class ChatController {
 
     public ChatClient getClient() {
         return client;
+    }
+
+    public void setNickName(MouseEvent mouseEvent) {
+        TextInputDialog tid = new TextInputDialog("New nickname");
+        Optional<String> result = tid.showAndWait();
+        final String[] newNick = new String[1];
+        result.ifPresent(s -> newNick[0] = s);
+        client.sendMessage(CHANGE_NICK, newNick);
     }
 }

@@ -6,4 +6,6 @@ public interface AuthService extends Closeable {
     void start();
 
     String getNickByLoginPass(String login, String pass);
+
+    void setNick(String oldNick, String newNick);
 }

@@ -18,7 +18,7 @@
     <HBox spacing="10" fx:id="authBox">
         <TextField fx:id="loginField" promptText="login"/>
         <PasswordField fx:id="passField" promptText="password"/>
-        <Button text="Sign in" onAction="#signInBtnClick" defaultButton="true"/>
+        <Button text="Sign in" onAction="#signInBtnClick"/>
     </HBox>
     <HBox fx:id="messageBox" visible="false" spacing="10" VBox.vgrow="ALWAYS">
         <VBox>
@@ -29,7 +29,11 @@
             </HBox>
         </VBox>
         <VBox>
-            <Button text="Logout" onMouseClicked="#logout"/>
+            <HBox>
+                <Button text="Logout" onMouseClicked="#logout"/>
+                <Button text="Set new nickname" onMouseClicked="#setNickName"/>
+
+            </HBox>
             <ListView fx:id="clientList" minWidth="200" maxWidth="200" onMouseClicked="#selectClient"/>
         </VBox>
     </HBox>

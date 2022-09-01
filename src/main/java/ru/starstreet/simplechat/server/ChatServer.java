@@ -1,6 +1,8 @@
 package ru.starstreet.simplechat.server;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.starstreet.simplechat.Command;
 
 import java.io.IOException;
@@ -15,6 +17,7 @@ public class ChatServer {
     private final Map<String, ClientHandler> clients;
     private final int PORT = 8189;
     private AuthService authService;
+    private final Logger log = LoggerFactory.getLogger(ChatServer.class);
 
     public AuthService getAuthService() {
         return authService;
@@ -26,16 +29,15 @@ public class ChatServer {
 
     public void run() {
         try (ServerSocket server = new ServerSocket(PORT);
-             AuthService authService = new BaseAuthService()) {
+             AuthService authService = new BaseAuthService(log)) {
             this.authService = authService;
+            log.info("Сервер запущен");
             while (true) {
-                System.out.println("Сервер ожидает подключения");
                 final Socket socket = server.accept();
-                System.out.println("Клиент подключился");
                 new ClientHandler(this, socket);
             }
         } catch (IOException e) {
-            System.out.println("Ошибка в работе сервера");
+            log.error("Произошла ошибка в работе сервера:\n" + e.getMessage());
         }
     }
 
@@ -54,11 +56,11 @@ public class ChatServer {
     public synchronized void subscribe(ClientHandler clientHandler) {
         clients.put(clientHandler.getNick(), clientHandler);
         broadcastClientsList();
-        System.out.println(clientHandler.getNick() + " вошёл в чат");
+        log.info("Клиент " + clientHandler.getNick() + " подключился");
     }
 
     public synchronized void unsubscribe(ClientHandler clientHandler) {
-        System.out.println(clientHandler.getNick() + " покинул чат");
+        log.info(clientHandler.getNick() + " покинул чат");
         clients.remove(clientHandler.getNick());
         broadcastClientsList();
     }
@@ -67,7 +69,6 @@ public class ChatServer {
         String nicks = clients.values().stream()
                 .map(ClientHandler::getNick)
                 .collect(Collectors.joining(" "));
-        System.out.println(nicks);
         broadcastMsg(Command.CLIENTS, nicks);
     }
 
@@ -80,7 +81,6 @@ public class ChatServer {
 
     }
 
-
     public void sendPrivateMsg(ClientHandler from, String nickTo, String message) {
         ClientHandler clientTo = clients.get(nickTo);
         if (clientTo == null) {
@@ -89,5 +89,20 @@ public class ChatServer {
         }
         clientTo.sendMsg(Command.MESSAGE, "От " + from.getNick() + ":" + message);
         from.sendMsg(Command.MESSAGE, "Участнику " + nickTo + ":" + message);
+    }
+
+    public void setNick(ClientHandler clientHandler, String newNick) {
+        if (!isNickBusy(newNick)) {
+            authService.setNick(clientHandler.getNick(), newNick);
+            broadcastMsg(Command.MESSAGE, clientHandler.getNick() + " сменил ник на " + newNick);
+            clients.remove(clientHandler.getNick());
+            clientHandler.setNick(newNick);
+            clients.put(newNick, clientHandler);
+            broadcastClientsList();
+        }
+    }
+
+    public void log(ClientHandler client, String str) {
+        log.trace("Клиент" + client.getNick() + "прислал сообщение/команду: " + str);
     }
 }
